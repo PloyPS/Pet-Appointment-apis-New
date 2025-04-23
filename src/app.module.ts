@@ -20,16 +20,19 @@ import { AppoinmentController } from './route/appoinment/appoinment.controller';
 import { Subjects } from './schema/subjects.entity';
 import { Times } from './schema/times.entity';
 import { Appointments } from './schema/appointments.entity';
+import * as dotenv from 'dotenv';
+const envFile = process.argv[2] || process.env.NODE_ENV || '.env';
 
+dotenv.config({ path: envFile });
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
+      host: process.env.MYSQL_HOST ||'localhost',
       port: 3306,
-      username: 'root',
-      password: 'convergence',
-      database: 'pet-appoinment',
+      username: process.env.MYSQL_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || 'convergence',
+      database: process.env.MYSQL_DATABASE || 'pet-appointment',
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
       synchronize: true,
     }),
