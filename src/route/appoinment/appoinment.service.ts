@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subjects } from 'src/schema/subjects.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Appointments } from 'src/schema/appointments.entity';
 import { Times } from 'src/schema/times.entity';
 import moment from 'moment';
@@ -46,6 +46,7 @@ export class AppoinmentService {
 
     const rawAppointments = await query
       .select([
+        'a.id AS id',
         'u.firstname AS name',
         's.subject AS subject',
         'at.name AS animals_type',
@@ -85,6 +86,22 @@ export class AppoinmentService {
       throw new Error('User not found');
     }
 
+    const now = moment();
+    const startOfToday = now.clone().startOf('day').toDate();
+    const endOfToday = now.clone().endOf('day').toDate();
+
+    const countToday = await this.appointmentsRepository.count({
+      where: {
+        user: { id: userId },
+        createDate: Between(startOfToday, endOfToday),
+        isDelete: '0',
+      },
+    });
+
+    if (countToday >= 3) {
+      throw new BadRequestException('คุณจองได้ไม่เกิน 3 ครั้งต่อวัน');
+    }
+
     const appointment = await this.appointmentsRepository.save({
       user,
       subject,
@@ -104,24 +121,31 @@ export class AppoinmentService {
     const appointmentDate = appointmentDateObj.format('DD/MM/YYYY');
     const appointmentTime = appointmentDateObj.format('HH:mm:ss');
 
-    console.log('Appointment Date:', appointmentDate);
-    console.log('Appointment Time:', appointmentTime);
-
-    const timesRepository = this.TimesRepository;
-
-    await timesRepository.update(
-      {
-        date: appointmentDate,
-        time: appointmentTime,
-      },
-      {
-        is_active: 1,
-      },
+    await this.TimesRepository.update(
+      { date: appointmentDate, time: appointmentTime },
+      { is_active: 1 },
     );
 
     return {
       message: 'จองนัดหมายสำเร็จ',
       data: appointment,
     };
+  }
+
+  async updateStatus(
+    id: number,
+    status: number,
+    modifiedBy: number,
+  ): Promise<any> {
+    await this.appointmentsRepository.update(
+      { id },
+      {
+        status,
+        modifiedDate: new Date(),
+        modifiedBy,
+      },
+    );
+
+    return { message: 'Status updated successfully' };
   }
 }

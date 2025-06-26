@@ -34,8 +34,10 @@ export class UsersService {
   ) {}
 
   async getUser(): Promise<UserEntity[]> {
-    const users = await this.userRepository.find();
-    console.log(users);
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.isDelete IS NULL OR user.isDelete != 1')
+      .getMany();
     return users;
   }
 
@@ -62,7 +64,9 @@ export class UsersService {
   }
 
   async getAnimalsType(): Promise<AnimalsType[]> {
-    const animalsType = await this.animalsTypeRepository.find();
+    const animalsType = await this.animalsTypeRepository.find({
+      where: { isDelete: 0 },
+    });
     console.log(animalsType);
     return animalsType;
   }
@@ -129,5 +133,91 @@ export class UsersService {
 
   getAllweight(): Promise<Weight[]> {
     return this.weightRepository.find();
+  }
+
+  async deleteAnimalsType(id: number): Promise<void> {
+    await this.animalsTypeRepository.update(id, { isDelete: 1 });
+  }
+
+  async getPetAll() {
+    const pets = await this.petsRepository
+      .createQueryBuilder('p')
+      .leftJoinAndSelect('p.user', 'u')
+      .leftJoinAndSelect('p.animalsType', 'at')
+      .leftJoinAndSelect('p.petWeight', 'w')
+      .where('p.isDelete IS NULL')
+      .select([
+        'p.id',
+        'p.name',
+        'p.petBreeds',
+        'p.petAge',
+        'p.createDate',
+        'u.firstname',
+        'at.id',
+        'at.name',
+        'w.weight',
+        'w.id',
+      ])
+      .getRawMany();
+
+    return pets;
+  }
+
+  async getAllWeight(animalTypeId: number): Promise<Weight[]> {
+    try {
+      const weights = await this.weightRepository.find({
+        where: {
+          isDelete: null,
+          animalTypeId: animalTypeId,
+        },
+      });
+
+      console.log('Found weights:', weights);
+      return weights;
+    } catch (error) {
+      console.error('Error fetching weights:', error);
+      return [];
+    }
+  }
+
+  async updateUser(
+    id: number,
+    firstname: string,
+    lastname: string,
+    phone: string,
+    password: string,
+  ): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({ where: { id: id } });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    user.firstname = firstname;
+    user.lastname = lastname;
+    user.phone = phone;
+    user.password = password;
+
+    return await this.userRepository.save(user);
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await this.userRepository.update(id, { isDelete: true });
+  }
+
+  async deletePet(id: number): Promise<void> {
+    await this.petsRepository.update(id, { isDelete: true });
+  }
+
+  async editPetAgeAndWeight(id: number, petAge?: string, petWeightId?: number) {
+    const pet = await this.petsRepository.findOne({ where: { id } });
+
+    if (!pet) throw new Error('Not found');
+
+    if (petAge !== undefined && petAge !== '') {
+      pet.petAge = petAge;
+    }
+    if (petWeightId !== undefined) pet.petWeightId = petWeightId;
+
+    return await this.petsRepository.save(pet);
   }
 }

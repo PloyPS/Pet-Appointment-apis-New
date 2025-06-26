@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  Patch,
+  Param,
+} from '@nestjs/common';
 import { AppoinmentService } from './appoinment.service';
 
 @Controller('appoinment')
@@ -56,5 +65,15 @@ export class AppoinmentController {
     } catch (error) {
       throw error;
     }
+  }
+
+  @Patch('status/:id')
+  updateAppointmentStatus(
+    @Param('id') id: number,
+    @Body('status') status: number,
+    @Req() req: any,
+  ) {
+    const modifiedBy = req.user?.id || 0;
+    return this.appoinmentService.updateStatus(id, status, modifiedBy);
   }
 }
