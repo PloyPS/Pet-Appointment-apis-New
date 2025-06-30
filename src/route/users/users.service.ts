@@ -42,6 +42,9 @@ export class UsersService {
   }
 
   async saveUser(user: UserEntity): Promise<UserEntity> {
+    if (user.role === null || user.role === undefined) {
+      user.role = 0;
+    }
     return await this.userRepository.save(user);
   }
 
