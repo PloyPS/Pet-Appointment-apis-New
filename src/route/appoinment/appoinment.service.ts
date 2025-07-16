@@ -44,6 +44,8 @@ export class AppoinmentService {
       query.andWhere('a.user = :userId', { userId });
     }
 
+    query.orderBy('a.createDate', 'DESC');
+
     const rawAppointments = await query
       .select([
         'a.id AS id',
@@ -117,7 +119,7 @@ export class AppoinmentService {
       isDelete: '0',
     });
 
-    const appointmentDateObj = moment(timeAppointment);
+    const appointmentDateObj = moment.utc(timeAppointment).utcOffset('+07:00');
     const appointmentDate = appointmentDateObj.format('DD/MM/YYYY');
     const appointmentTime = appointmentDateObj.format('HH:mm:ss');
 
