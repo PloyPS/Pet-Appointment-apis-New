@@ -6,6 +6,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Appointments } from './appointments.entity';
+import { Pets } from './pets.entity';
 
 @Entity('users', { schema: 'pet-appointment' })
 export class UserEntity {
@@ -47,4 +48,7 @@ export class UserEntity {
 
   @OneToMany(() => Appointments, (appointment) => appointment.user)
   appointments: Appointments[];
+
+  @OneToMany(() => Pets, (pet) => pet.user)
+  pets: Pets[];
 }

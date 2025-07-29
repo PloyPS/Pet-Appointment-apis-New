@@ -3,10 +3,13 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { UserEntity } from 'src/schema/users.entity';
 
 @Controller('users')
 export class UsersController {
@@ -224,7 +227,7 @@ export class UsersController {
     }
   }
 
-  @Get('all-weight')  
+  @Get('all-weight')
   async getAllWeight() {
     try {
       return {
@@ -235,5 +238,72 @@ export class UsersController {
     } catch (error) {
       throw error;
     }
+  }
+
+  @Patch(':id')
+  async softDelete(@Param('id') id: number): Promise<void> {
+    return this.usersService.deleteAnimalsType(id);
+  }
+
+  @Get('pets-all')
+  async allPets() {
+    try {
+      return {
+        status: true,
+        message: 'OK',
+        pets: await this.usersService.getPetAll(),
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('editpet/all-weight')
+  async getAllWeightData(@Query('animalTypeId') animalTypeId: number) {
+    try {
+      return {
+        status: true,
+        message: 'OK',
+        weight: await this.usersService.getAllWeight(animalTypeId),
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Patch('update-user/:id')
+  async updateUser(
+    @Param('id') id: number,
+    @Body('firstname') firstname: string,
+    @Body('lastname') lastname: string,
+    @Body('phone') phone: string,
+    @Body('password') password: string,
+  ): Promise<UserEntity> {
+    return this.usersService.updateUser(
+      id,
+      firstname,
+      lastname,
+      phone,
+      password,
+    );
+  }
+
+  @Patch('delete-user/:id')
+  async deleteUser(@Param('id') id: number): Promise<void> {
+    return this.usersService.deleteUser(id);
+  }
+
+  @Patch('delete-pet/:id')
+  async deletePet(@Param('id') id: number): Promise<void> {
+    return this.usersService.deletePet(id);
+  }
+
+  @Patch('edit-pet/:id')
+  async editPet(
+    @Param('id') id: number,
+    @Body('petAge') petAge: string,
+    @Body('petWeightId') petWeightId: number,
+  ): Promise<any> {
+    return this.usersService.editPetAgeAndWeight(id, petAge, petWeightId);
   }
 }
